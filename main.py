@@ -39,8 +39,8 @@ if st.button("Search Trending Videos"):
                 "order": "viewCount",
                 "publishedAfter": start_date,
                 "maxResults": 5,
+                "videoDuration": "medium",  # Exclude shorts (shorts are usually "short" duration)
                 "key": API_KEY,
-                "topicId": "",  # Future customization if required
             }
 
             # Fetch video data
