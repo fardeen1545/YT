@@ -16,13 +16,16 @@ days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30
 
 # List of broader keywords
 keywords = [
- "Affair Relationship Stories", "Reddit Update", "Reddit Relationship Advice", "Reddit Relationship", 
-"Reddit Cheating", "AITA Update", "Open Marriage", "Open Relationship", "X BF Caught", 
-"Stories Cheat", "X GF Reddit", "AskReddit Surviving Infidelity", "GurlCan Reddit", 
-"Cheating Story Actually Happened", "Cheating Story Real", "True Cheating Story", 
-"Reddit Cheating Story", "R/Surviving Infidelity", "Surviving Infidelity", 
-"Reddit Marriage", "Wife Cheated I Can't Forgive", "Reddit AP", "Exposed Wife", 
-"Cheat Exposed"
+ "Jon Snow", "Daenerys Targaryen", "Tyrion Lannister", "Arya Stark", 
+    "Sansa Stark", "Bran Stark", "Cersei Lannister", "Jaime Lannister", 
+    "Tywin Lannister", "Joffrey Baratheon", "Robb Stark", "Ned Stark", 
+    "Stannis Baratheon", "Melisandre", "Davos Seaworth", "Theon Greyjoy", 
+    "Yara Greyjoy", "Brienne of Tarth", "Samwell Tarly", "Jorah Mormont", 
+    "Varys", "Petyr Baelish", "Sandor Clegane", "Gregor Clegane", 
+    "Ramsay Bolton", "Roose Bolton", "Gendry", "Missandei", "Grey Worm", 
+    "Euron Greyjoy", "Olenna Tyrell", "Margaery Tyrell", "Loras Tyrell", 
+    "Barristan Selmy", "Tormund Giantsbane", "Beric Dondarrion", 
+    "Benjen Stark", "Khal Drogo", "Shae", "Qyburn", "High Sparrow", "Night King"
 ]
 
 # Fetch Data Button
@@ -43,7 +46,7 @@ if st.button("Fetch Data"):
                 "type": "video",
                 "order": "viewCount",
                 "publishedAfter": start_date,
-                "maxResults": 5,
+                "maxResults": 20,
                 "key": API_KEY,
             }
 
