@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import isodate  # Required for parsing ISO 8601 durations
 
 # ✅ Directly adding API Key (Replace with your actual key)
-API_KEY = "your_api_key_here"
+API_KEY = AIzaSyBuj2jKnx1ypRG61P56ouiw1M5SzH0JBaM
 
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
