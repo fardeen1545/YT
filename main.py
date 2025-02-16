@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime, timedelta
+import isodate
 
 # YouTube API Key
 API_KEY = "AIzaSyBuj2jKnx1ypRG61P56ouiw1M5SzH0JBaM"
@@ -14,11 +15,13 @@ st.title("YouTube Viral Topics Tool")
 # Input Fields
 days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30, value=5)
 
-# User Input for Keyword, Views, and Subs
+# User Input for Keyword, Views, Subs, and Video Length
 st.sidebar.header("Filter Settings")
 keyword_input = st.sidebar.text_input("Enter Keyword:", "Affair Relationship Stories")
 min_views = st.sidebar.number_input("Minimum Views:", min_value=0, value=1000)
 min_subs = st.sidebar.number_input("Minimum Subscribers:", min_value=0, value=3000)
+min_duration = st.sidebar.number_input("Minimum Video Duration (in minutes):", min_value=0, value=1)
+max_duration = st.sidebar.number_input("Maximum Video Duration (in minutes):", min_value=1, value=10)
 
 # Fetch Data Button
 if st.button("Fetch Data"):
@@ -69,27 +72,42 @@ if st.button("Fetch Data"):
                     if "items" not in channel_data or not channel_data["items"]:
                         st.warning(f"Failed to fetch channel statistics for keyword: {keyword_input}")
                     else:
-                        stats = stats_data["items"]
-                        channels = channel_data["items"]
+                        # Fetch video duration (this is where we parse the video length)
+                        video_params = {"part": "contentDetails", "id": ",".join(video_ids), "key": API_KEY}
+                        video_response = requests.get(YOUTUBE_VIDEO_URL, params=video_params)
+                        video_data = video_response.json()
 
-                        # Collect results with user-defined filters
-                        for video, stat, channel in zip(videos, stats, channels):
-                            title = video["snippet"].get("title", "N/A")
-                            description = video["snippet"].get("description", "")[:200]
-                            video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
-                            views = int(stat["statistics"].get("viewCount", 0))
-                            subs = int(channel["statistics"].get("subscriberCount", 0))
+                        if "items" not in video_data or not video_data["items"]:
+                            st.warning(f"Failed to fetch video duration for keyword: {keyword_input}")
+                        else:
+                            stats = stats_data["items"]
+                            channels = channel_data["items"]
+                            video_details = video_data["items"]
 
-                            # Filter results based on user-defined views and subscriber count
-                            if views >= min_views and subs >= min_subs:
-                                all_results.append({
-                                    "Title": title,
-                                    "Description": description,
-                                    "URL": video_url,
-                                    "Views": views,
-                                    "Subscribers": subs,
-                                    "Keyword": keyword_input
-                                })
+                            # Collect results with user-defined filters
+                            for video, stat, channel, details in zip(videos, stats, channels, video_details):
+                                title = video["snippet"].get("title", "N/A")
+                                description = video["snippet"].get("description", "")[:200]
+                                video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
+                                views = int(stat["statistics"].get("viewCount", 0))
+                                subs = int(channel["statistics"].get("subscriberCount", 0))
+                                duration_str = details["contentDetails"].get("duration", "PT0S")
+                                
+                                # Convert duration from ISO 8601 format to minutes
+                                duration = isodate.parse_duration(duration_str)
+                                duration_minutes = duration.total_seconds() / 60
+
+                                # Filter results based on user-defined views, subscribers, and duration
+                                if views >= min_views and subs >= min_subs and min_duration <= duration_minutes <= max_duration:
+                                    all_results.append({
+                                        "Title": title,
+                                        "Description": description,
+                                        "URL": video_url,
+                                        "Views": views,
+                                        "Subscribers": subs,
+                                        "Duration (minutes)": duration_minutes,
+                                        "Keyword": keyword_input
+                                    })
 
         # Display results
         if all_results:
@@ -101,6 +119,7 @@ if st.button("Fetch Data"):
                     f"**URL:** [Watch Video]({result['URL']})  \n"
                     f"**Views:** {result['Views']}  \n"
                     f"**Subscribers:** {result['Subscribers']}  \n"
+                    f"**Duration (minutes):** {result['Duration (minutes)']}  \n"
                     f"**Keyword:** {result['Keyword']}"
                 )
                 st.write("---")
