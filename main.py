@@ -3,30 +3,25 @@ import requests
 from datetime import datetime, timedelta
 
 # YouTube API Key
-API_KEY = "AIzaSyBuj2jKnx1ypRG61P56ouiw1M5SzH0JBaM"
+API_KEY = "YOUR_NEW_API_KEY"
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
 # Streamlit App Title
-st.title("YouTube Viral Topics Tool")
+st.title("YouTube Trending Topics Finder")
 
 # Input Fields
-days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30, value=5)
+days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30, value=7)
+keywords_input = st.text_area("Enter Keywords (separate by commas):", "Viral Stories, Trending Topics, Reddit Discussions")
+min_views = st.number_input("Minimum Views:", min_value=0, value=1000)
+max_subscribers = st.number_input("Maximum Subscribers:", min_value=0, value=5000)
 
-# List of broader keywords
-keywords = [
- "Affair Relationship Stories", "Reddit Update", "Reddit Relationship Advice", "Reddit Relationship", 
-"Reddit Cheating", "AITA Update", "Open Marriage", "Open Relationship", "X BF Caught", 
-"Stories Cheat", "X GF Reddit", "AskReddit Surviving Infidelity", "GurlCan Reddit", 
-"Cheating Story Actually Happened", "Cheating Story Real", "True Cheating Story", 
-"Reddit Cheating Story", "R/Surviving Infidelity", "Surviving Infidelity", 
-"Reddit Marriage", "Wife Cheated I Can't Forgive", "Reddit AP", "Exposed Wife", 
-"Cheat Exposed"
-]
+# Convert input keywords into a list
+keywords = [k.strip() for k in keywords_input.split(",") if k.strip()]
 
 # Fetch Data Button
-if st.button("Fetch Data"):
+if st.button("Search Trending Videos"):
     try:
         # Calculate date range
         start_date = (datetime.utcnow() - timedelta(days=int(days))).isoformat("T") + "Z"
@@ -88,12 +83,12 @@ if st.button("Fetch Data"):
             # Collect results
             for video, stat, channel in zip(videos, stats, channels):
                 title = video["snippet"].get("title", "N/A")
-                description = video["snippet"].get("description", "")[:200]
+                description = video["snippet"].get("description", "")[:250]
                 video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
                 views = int(stat["statistics"].get("viewCount", 0))
                 subs = int(channel["statistics"].get("subscriberCount", 0))
 
-                if subs < 3000:  # Only include channels with fewer than 3,000 subscribers
+                if views >= min_views and subs <= max_subscribers:
                     all_results.append({
                         "Title": title,
                         "Description": description,
@@ -115,7 +110,7 @@ if st.button("Fetch Data"):
                 )
                 st.write("---")
         else:
-            st.warning("No results found for channels with fewer than 3,000 subscribers.")
+            st.warning("No results found matching the criteria.")
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
