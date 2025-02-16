@@ -1,17 +1,9 @@
 import streamlit as st
 import requests
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
-import os
 
-# Load environment variables from the .env file
-load_dotenv()
-
-# YouTube API Key from environment variable
-API_KEY = os.getenv('YOUTUBE_API_KEY')
-if not API_KEY:
-    st.error("API Key is missing! Please set it in the .env file.")
-
+# YouTube API Key
+API_KEY = "AIzaSyBuj2jKnx1ypRG61P56ouiw1M5SzH0JBaM"
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
