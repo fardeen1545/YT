@@ -18,7 +18,7 @@ min_views = st.number_input("Minimum Views:", min_value=0, value=1000)
 max_subscribers = st.number_input("Maximum Subscribers:", min_value=0, value=5000)
 
 # Convert input keywords into a list
-keywords = [k.strip() for k in keywords_input.split(",") if k.strip()]
+keywords = [k.strip().lower() for k in keywords_input.split(",") if k.strip()]
 
 # Fetch Data Button
 if st.button("Search Trending Videos"):
@@ -39,7 +39,6 @@ if st.button("Search Trending Videos"):
                 "order": "viewCount",
                 "publishedAfter": start_date,
                 "maxResults": 5,
-                "videoDuration": "medium",  # Exclude shorts (shorts are usually "short" duration)
                 "key": API_KEY,
             }
 
@@ -47,14 +46,18 @@ if st.button("Search Trending Videos"):
             response = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
             data = response.json()
 
+            if response.status_code != 200:
+                st.error(f"YouTube API Error: {data.get('error', {}).get('message', 'Unknown error')}")
+                continue
+
             # Check if "items" key exists
             if "items" not in data or not data["items"]:
                 st.warning(f"No videos found for keyword: {keyword}")
                 continue
 
             videos = data["items"]
-            video_ids = [video["id"]["videoId"] for video in videos if "id" in video and "videoId" in video["id"]]
-            channel_ids = [video["snippet"]["channelId"] for video in videos if "snippet" in video and "channelId" in video["snippet"]]
+            video_ids = [video["id"].get("videoId", "") for video in videos if "id" in video]
+            channel_ids = [video["snippet"].get("channelId", "") for video in videos if "snippet" in video]
 
             if not video_ids or not channel_ids:
                 st.warning(f"Skipping keyword: {keyword} due to missing video/channel data.")
@@ -89,9 +92,10 @@ if st.button("Search Trending Videos"):
                 views = int(stat["statistics"].get("viewCount", 0))
                 subs = int(channel["statistics"].get("subscriberCount", 0))
                 tags = channel["snippet"].get("tags", [])
+                tags_text = " ".join(tags).lower() if tags else ""
 
-                search_content = title.lower() + " " + description.lower() + " " + " ".join(tags).lower()
-                if any(kw.lower() in search_content for kw in keywords) and views >= min_views and subs <= max_subscribers:
+                search_content = f"{title.lower()} {description.lower()} {tags_text}"
+                if any(kw in search_content for kw in keywords) and views >= min_views and subs <= max_subscribers:
                     all_results.append({
                         "Title": title,
                         "Description": description,
