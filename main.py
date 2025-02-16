@@ -9,19 +9,27 @@ YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
 # Streamlit App Title
-st.title("YouTube Trending Topics Finder")
+st.title("YouTube Viral Topics Tool")
 
 # Input Fields
-days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30, value=7)
-keywords_input = st.text_area("Enter Keywords (separate by commas):", "Viral Stories, Trending Topics, Reddit Discussions")
-min_views = st.number_input("Minimum Views:", min_value=0, value=1000)
-max_subscribers = st.number_input("Maximum Subscribers:", min_value=0, value=5000)
+days = st.number_input("Enter Days to Search (1-30):", min_value=1, max_value=30, value=5)
 
-# Convert input keywords into a list
-keywords = [k.strip().lower() for k in keywords_input.split(",") if k.strip()]
+# List of broader keywords
+keywords = [
+    "Affair Relationship Stories", "Reddit Update", "Reddit Relationship Advice", "Reddit Relationship", 
+    "Reddit Cheating", "AITA Update", "Open Marriage", "Open Relationship", "X BF Caught", 
+    "Stories Cheat", "X GF Reddit", "AskReddit Surviving Infidelity", "GurlCan Reddit", 
+    "Cheating Story Actually Happened", "Cheating Story Real", "True Cheating Story", 
+    "Reddit Cheating Story", "R/Surviving Infidelity", "Surviving Infidelity", 
+    "Reddit Marriage", "Wife Cheated I Can't Forgive", "Reddit AP", "Exposed Wife", 
+    "Cheat Exposed"
+]
+
+# Sidebar tabs
+tab = st.sidebar.selectbox("Select a Tab", ["Views", "Subscribers", "Keywords"])
 
 # Fetch Data Button
-if st.button("Search Trending Videos"):
+if st.button("Fetch Data"):
     try:
         # Calculate date range
         start_date = (datetime.utcnow() - timedelta(days=int(days))).isoformat("T") + "Z"
@@ -46,18 +54,14 @@ if st.button("Search Trending Videos"):
             response = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
             data = response.json()
 
-            if response.status_code != 200:
-                st.error(f"YouTube API Error: {data.get('error', {}).get('message', 'Unknown error')}")
-                continue
-
             # Check if "items" key exists
             if "items" not in data or not data["items"]:
                 st.warning(f"No videos found for keyword: {keyword}")
                 continue
 
             videos = data["items"]
-            video_ids = [video["id"].get("videoId", "") for video in videos if "id" in video]
-            channel_ids = [video["snippet"].get("channelId", "") for video in videos if "snippet" in video]
+            video_ids = [video["id"]["videoId"] for video in videos if "id" in video and "videoId" in video["id"]]
+            channel_ids = [video["snippet"]["channelId"] for video in videos if "snippet" in video and "channelId" in video["snippet"]]
 
             if not video_ids or not channel_ids:
                 st.warning(f"Skipping keyword: {keyword} due to missing video/channel data.")
@@ -72,8 +76,8 @@ if st.button("Search Trending Videos"):
                 st.warning(f"Failed to fetch video statistics for keyword: {keyword}")
                 continue
 
-            # Fetch channel statistics including tags
-            channel_params = {"part": "snippet,statistics", "id": ",".join(channel_ids), "key": API_KEY}
+            # Fetch channel statistics
+            channel_params = {"part": "statistics", "id": ",".join(channel_ids), "key": API_KEY}
             channel_response = requests.get(YOUTUBE_CHANNEL_URL, params=channel_params)
             channel_data = channel_response.json()
 
@@ -87,39 +91,63 @@ if st.button("Search Trending Videos"):
             # Collect results
             for video, stat, channel in zip(videos, stats, channels):
                 title = video["snippet"].get("title", "N/A")
-                description = video["snippet"].get("description", "")[:250]
+                description = video["snippet"].get("description", "")[:200]
                 video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
                 views = int(stat["statistics"].get("viewCount", 0))
                 subs = int(channel["statistics"].get("subscriberCount", 0))
-                tags = channel["snippet"].get("tags", [])
-                tags_text = " ".join(tags).lower() if tags else ""
 
-                search_content = f"{title.lower()} {description.lower()} {tags_text}"
-                if any(kw in search_content for kw in keywords) and views >= min_views and subs <= max_subscribers:
+                if subs < 3000:  # Only include channels with fewer than 3,000 subscribers
                     all_results.append({
                         "Title": title,
                         "Description": description,
                         "URL": video_url,
                         "Views": views,
                         "Subscribers": subs,
-                        "Tags": tags
+                        "Keyword": keyword
                     })
 
-        # Display results
+        # Display results based on the selected tab
         if all_results:
-            st.success(f"Found {len(all_results)} results across all keywords!")
-            for result in all_results:
-                st.markdown(
-                    f"**Title:** {result['Title']}  \n"
-                    f"**Description:** {result['Description']}  \n"
-                    f"**Tags:** {', '.join(result['Tags'])}  \n"
-                    f"**URL:** [Watch Video]({result['URL']})  \n"
-                    f"**Views:** {result['Views']}  \n"
-                    f"**Subscribers:** {result['Subscribers']}"
-                )
-                st.write("---")
+            if tab == "Views":
+                all_results_sorted = sorted(all_results, key=lambda x: x["Views"], reverse=True)
+                st.success(f"Found {len(all_results_sorted)} results based on Views!")
+                for result in all_results_sorted:
+                    st.markdown(
+                        f"**Title:** {result['Title']}  \n"
+                        f"**Description:** {result['Description']}  \n"
+                        f"**URL:** [Watch Video]({result['URL']})  \n"
+                        f"**Views:** {result['Views']}  \n"
+                        f"**Subscribers:** {result['Subscribers']}  \n"
+                        f"**Keyword:** {result['Keyword']}"
+                    )
+                    st.write("---")
+            elif tab == "Subscribers":
+                all_results_sorted = sorted(all_results, key=lambda x: x["Subscribers"], reverse=True)
+                st.success(f"Found {len(all_results_sorted)} results based on Subscribers!")
+                for result in all_results_sorted:
+                    st.markdown(
+                        f"**Title:** {result['Title']}  \n"
+                        f"**Description:** {result['Description']}  \n"
+                        f"**URL:** [Watch Video]({result['URL']})  \n"
+                        f"**Views:** {result['Views']}  \n"
+                        f"**Subscribers:** {result['Subscribers']}  \n"
+                        f"**Keyword:** {result['Keyword']}"
+                    )
+                    st.write("---")
+            elif tab == "Keywords":
+                st.success(f"Found {len(all_results)} results across all keywords!")
+                for result in all_results:
+                    st.markdown(
+                        f"**Title:** {result['Title']}  \n"
+                        f"**Description:** {result['Description']}  \n"
+                        f"**URL:** [Watch Video]({result['URL']})  \n"
+                        f"**Views:** {result['Views']}  \n"
+                        f"**Subscribers:** {result['Subscribers']}  \n"
+                        f"**Keyword:** {result['Keyword']}"
+                    )
+                    st.write("---")
         else:
-            st.warning("No results found matching the criteria.")
-
+            st.warning("No results found for channels with fewer than 3,000 subscribers.")
+    
     except Exception as e:
         st.error(f"An error occurred: {e}")
