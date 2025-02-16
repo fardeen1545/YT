@@ -3,8 +3,9 @@ import requests
 from datetime import datetime, timedelta
 import isodate  # Required for parsing ISO 8601 durations
 
-# Load API Key securely from Streamlit secrets
-API_KEY = st.secrets["YOUTUBE_API_KEY"]
+# ✅ Directly adding API Key (Replace with your actual key)
+API_KEY = "your_api_key_here"
+
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
@@ -29,6 +30,11 @@ keywords = [
     "Barristan Selmy", "Tormund Giantsbane", "Beric Dondarrion", 
     "Benjen Stark", "Khal Drogo", "Shae", "Qyburn", "High Sparrow", "Night King"
 ]
+
+# ✅ Ensure the API key is correctly set
+if not API_KEY or API_KEY == "your_api_key_here":
+    st.error("⚠️ API Key is missing! Please add a valid YouTube API Key in the script.")
+    st.stop()
 
 # Fetch Data Button
 if st.button("Fetch Data"):
@@ -96,7 +102,7 @@ if st.button("Fetch Data"):
                     duration_str = stats.get(video_id, {}).get("contentDetails", {}).get("duration", "PT0S")
                     duration_seconds = isodate.parse_duration(duration_str).total_seconds()
 
-                    # Apply filters
+                    # Apply filters (views, subscribers, and duration > 1 minute)
                     if subs < 3000 and views >= min_views and duration_seconds >= 60:
                         all_results.append({
                             "Title": title,
