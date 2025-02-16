@@ -40,6 +40,7 @@ if st.button("Search Trending Videos"):
                 "publishedAfter": start_date,
                 "maxResults": 5,
                 "key": API_KEY,
+                "topicId": "",  # Future customization if required
             }
 
             # Fetch video data
@@ -68,8 +69,8 @@ if st.button("Search Trending Videos"):
                 st.warning(f"Failed to fetch video statistics for keyword: {keyword}")
                 continue
 
-            # Fetch channel statistics
-            channel_params = {"part": "statistics", "id": ",".join(channel_ids), "key": API_KEY}
+            # Fetch channel statistics including tags
+            channel_params = {"part": "snippet,statistics", "id": ",".join(channel_ids), "key": API_KEY}
             channel_response = requests.get(YOUTUBE_CHANNEL_URL, params=channel_params)
             channel_data = channel_response.json()
 
@@ -87,14 +88,17 @@ if st.button("Search Trending Videos"):
                 video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
                 views = int(stat["statistics"].get("viewCount", 0))
                 subs = int(channel["statistics"].get("subscriberCount", 0))
+                tags = channel["snippet"].get("tags", [])
 
-                if views >= min_views and subs <= max_subscribers:
+                search_content = title.lower() + " " + description.lower() + " " + " ".join(tags).lower()
+                if any(kw.lower() in search_content for kw in keywords) and views >= min_views and subs <= max_subscribers:
                     all_results.append({
                         "Title": title,
                         "Description": description,
                         "URL": video_url,
                         "Views": views,
-                        "Subscribers": subs
+                        "Subscribers": subs,
+                        "Tags": tags
                     })
 
         # Display results
@@ -104,6 +108,7 @@ if st.button("Search Trending Videos"):
                 st.markdown(
                     f"**Title:** {result['Title']}  \n"
                     f"**Description:** {result['Description']}  \n"
+                    f"**Tags:** {', '.join(result['Tags'])}  \n"
                     f"**URL:** [Watch Video]({result['URL']})  \n"
                     f"**Views:** {result['Views']}  \n"
                     f"**Subscribers:** {result['Subscribers']}"
